@@ -1,0 +1,142 @@
+.page {
+  position: relative;
+  display: grid;
+  min-height: 100svh;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  background: #050505;
+  color: #f4f4ef;
+  isolation: isolate;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.13;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+}
+
+.header,
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: clamp(24px, 4vw, 64px);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+}
+
+.header {
+  padding-top: clamp(24px, 4vw, 48px);
+}
+
+.wordmark {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.24em;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 3vw, 42px);
+  color: rgba(244, 244, 239, 0.52);
+}
+
+.navigation span {
+  cursor: default;
+}
+
+.navigation a {
+  color: #f4f4ef;
+  transition: color 180ms ease;
+}
+
+.navigation a:hover {
+  color: #d6a92b;
+}
+
+.hero {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 24px;
+}
+
+.logoStage {
+  position: relative;
+  width: min(62vh, 560px, 82vw);
+  aspect-ratio: 1;
+}
+
+.logo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: invert(1) contrast(1.06);
+  mix-blend-mode: screen;
+}
+
+.footer {
+  padding-bottom: clamp(24px, 4vw, 44px);
+  color: rgba(244, 244, 239, 0.48);
+}
+
+.sectionIndex {
+  color: #d6a92b;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .page {
+    background: #050505;
+  }
+
+  .grid {
+    background-size: 48px 48px;
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .navigation {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    font-size: 9px;
+  }
+
+  .logoStage {
+    width: min(82vw, 430px);
+  }
+
+  .footer {
+    align-items: flex-end;
+    font-size: 9px;
+  }
+
+  .footer p:first-child {
+    max-width: 180px;
+    line-height: 1.6;
+  }
+}
