@@ -1,29 +1,16 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import "./home.css";
 
 export const metadata: Metadata = {
-  title: "Zhajinbang",
-  description: "Mechanics, robotics, and experiments by Zhajinbang.",
+  title: "zhajinbang",
+  description: "The official zhajinbang visual experience.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="motion-forced">
+      <body>{children}</body>
     </html>
   );
 }
