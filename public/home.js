@@ -204,11 +204,22 @@ function playOpeningWhenPageIsVisible() {
   }
 
   window.cancelAnimationFrame(entryPlaybackFrame);
-  entryPlaybackFrame = window.requestAnimationFrame(() => applyMotionMode({ replay: true }));
+  entryPlaybackFrame = window.requestAnimationFrame(() => {
+    let skipOpening = window.location.hash === "#members";
+    try {
+      const key = "zhajinbang-opening-seen";
+      skipOpening ||= sessionStorage.getItem(key) === "1";
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // The members anchor still skips the intro when storage is unavailable.
+    }
+
+    if (skipOpening) finishOpeningImmediately();
+    applyMotionMode();
+  });
 }
 
-// Start on the first displayed frame, without waiting for remote images. If
-// Edge restores this document from back/forward cache, pageshow replays it.
+// Start on the first displayed frame, without waiting for remote images.
 if (document.prerendering) {
   document.addEventListener("prerenderingchange", playOpeningWhenPageIsVisible, { once: true });
 } else {
@@ -216,5 +227,5 @@ if (document.prerendering) {
 }
 
 window.addEventListener("pageshow", (event) => {
-  if (event.persisted) playOpeningWhenPageIsVisible();
+  if (event.persisted) finishOpeningImmediately();
 });
