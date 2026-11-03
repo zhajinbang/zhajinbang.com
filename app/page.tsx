@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Script from "next/script";
+import { members } from "./members";
+import styles from "./terminals.module.css";
 
 const sparks = [
   ["0vmin", "-25vmin"],
@@ -104,9 +106,6 @@ export default function Home() {
         <main id="main-content" tabIndex={-1}>
           <section className="hero" aria-labelledby="gallery-heading">
             <div className="hero__intro">
-              <p className="section-label" lang="en">
-                01 / visual index
-              </p>
               <div className="hero__title-wrap">
                 <h1 id="gallery-heading" aria-label="Jerk it, til you cum it">
                   <span>JERK IT,</span>
@@ -120,39 +119,28 @@ export default function Home() {
                 />
               </div>
               <p className="hero__copy" lang="en">
-                This site is for our own pleasure.
-                <br />
-                No ads. That is the pleasure.
-                <br />
-                Zhajinbang, worldwide.
+                Zhajinbang,worldwide.
               </p>
             </div>
 
-            <div
-              className="gallery"
-              id="gallery"
-              role="region"
-              aria-roledescription="carousel"
-              aria-label="Featured image carousel"
-            >
-              <div className="gallery__viewport">
-                <div className="gallery__track" data-track />
-                <div
-                  className="gallery__dots"
-                  data-dots
-                  aria-label="Choose a poster"
-                />
-              </div>
-              <p className="sr-only" data-announcement aria-live="polite">
-                Slide 1 of 5 selected.
-              </p>
-            </div>
+            <section id="members" className={styles.terminals} lang="zh-CN" aria-label="成员入口">
+              <ul>
+                {members.map((member) => (
+                  <li key={member.slug}>
+                    <a href={`/members/${member.slug}`} >
+                      <strong>{member.name}</strong>
+                      <span>{member.role} <span aria-hidden="true">↗</span></span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </section>
         </main>
 
         <footer className="footer">
           <p>zhajinbang.com / visual reference only</p>
-          <p>Images: Unsplash · logo: existing repository asset</p>
+          <p>Logo: existing repository asset</p>
         </footer>
       </div>
 

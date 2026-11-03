@@ -1,0 +1,140 @@
+.page {
+  position: relative;
+  display: grid;
+  min-height: 100svh;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  background: #050505;
+  color: var(--ink);
+  isolation: isolate;
+}
+
+.grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.13;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black, transparent 82%);
+}
+
+.header,
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: clamp(24px, 4vw, 64px);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.header {
+  padding-top: clamp(24px, 4vw, 48px);
+  color: var(--muted);
+}
+
+.wordmark {
+  color: var(--ink);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.24em;
+}
+
+.content {
+  width: min(920px, 100%);
+  margin: auto;
+  padding: clamp(64px, 10vh, 120px) clamp(24px, 7vw, 72px);
+}
+
+.eyebrow,
+.role,
+.footer {
+  color: var(--signal);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.17em;
+}
+
+.content h1 {
+  margin: 14px 0 4px;
+  font-size: clamp(54px, 10vw, 116px);
+  line-height: 0.92;
+  letter-spacing: -0.08em;
+}
+
+.role {
+  margin: 18px 0 0;
+  color: var(--muted);
+}
+
+.note {
+  max-width: 32rem;
+  margin: clamp(36px, 6vw, 64px) 0;
+  font-size: clamp(18px, 2.4vw, 27px);
+  line-height: 1.5;
+}
+
+.menu {
+  border-top: 1px solid var(--edge);
+}
+
+.menuItem {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 21px 0;
+  border-bottom: 1px solid var(--edge);
+  transition: color 180ms ease, padding 180ms ease;
+}
+
+.menuItem:hover {
+  padding-inline: 12px;
+  color: var(--signal);
+}
+
+.menuItem > span:first-child,
+.arrow {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+
+.menuItem h2,
+.menuItem p {
+  margin: 0;
+}
+
+.menuItem h2 {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.menuItem p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.footer {
+  padding-bottom: clamp(24px, 4vw, 44px);
+  color: var(--muted);
+}
+
+.footer a:hover {
+  color: var(--signal);
+}
+
+@media (max-width: 640px) {
+  .grid { background-size: 48px 48px; }
+  .header, .footer { font-size: 9px; }
+  .header span { display: none; }
+  .content { padding-top: 72px; }
+  .menuItem { grid-template-columns: 32px 1fr auto; }
+  .footer span { display: none; }
+}

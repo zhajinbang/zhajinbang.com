@@ -1,0 +1,41 @@
+.terminals {
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.terminals ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.terminals a {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  min-height: 9rem;
+  gap: 0.75rem;
+  height: 100%;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  border: 1px solid var(--edge);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.terminals a:hover,
+.terminals a:focus-visible {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.terminals strong {
+  font-size: 1.75rem;
+}
+
+.terminals span {
+  font-size: 0.875rem;
+}

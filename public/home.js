@@ -1,67 +1,28 @@
-const slides = [
-  {
-    src: "https://images.unsplash.com/photo-1527589177743-325f24eef297?auto=format&fit=crop&w=1600&q=82",
-    alt: "A quiet shoreline under a muted sky",
-    caption: "Coastline in low light",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1600&q=82",
-    alt: "Editorial studio portrait of a person with their eyes closed",
-    caption: "Portrait / soft focus",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1484882918957-e9f6567be3c8?auto=format&fit=crop&w=1600&q=82",
-    alt: "Monochrome brutalist concrete architecture",
-    caption: "Concrete geometry",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1600&q=82",
-    alt: "Editorial portrait of a person against a bright background",
-    caption: "Portrait / daylight",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1642602105776-4f161cab8053?auto=format&fit=crop&w=1600&q=82",
-    alt: "Moody rocky coastline beside the sea",
-    caption: "Edge of the water",
-  },
-];
-
-const track = document.querySelector("[data-track]");
-const dots = document.querySelector("[data-dots]");
-const announcement = document.querySelector("[data-announcement]");
 const opening = document.querySelector("#opening");
 const siteShell = document.querySelector("#site-shell");
 const pageRevealRing = document.querySelector(".page-reveal-ring");
 const windLayer = document.querySelector("[data-wind-layer]");
 const goldWord = document.querySelector("h1 span:nth-child(2)");
-const gallery = document.querySelector("#gallery");
 const root = document.documentElement;
 const motionToggle = document.querySelector("[data-motion-toggle]");
 const replayButton = document.querySelector("[data-intro-replay]");
 const skipOpeningLink = document.querySelector(".skip-link");
 const initialMotion = new URLSearchParams(window.location.search).get("motion");
-let activeIndex = 0;
 // The requested product behavior is motion-on for every normal page load.
 // ?motion=off remains available as an explicit escape hatch, and the visible
 // toggle can still stop motion after the visitor has entered the page.
 let motionOverride = initialMotion === "off" ? "off" : "on";
-let isPaused = motionOverride === "off";
-let timer;
 let openingTimer;
 let openingExitTimer;
 let pageRevealTimer;
-let dotAnimationTimer;
 let entryPlaybackFrame;
 let windLayoutFrame;
 const pendingWindIndexes = new Set();
-let galleryVisible = true;
 // Keep the written tagline on screen long enough for the closing rings to read
 // as one complete gesture before the page-reveal circle takes over.
 const OPENING_EXIT_START = 2050;
 const OPENING_HOLD = 3600;
 const PAGE_REVEAL_DURATION = 960;
-const AUTOPLAY_INTERVAL = 4800;
-const DOT_ANIMATION_DURATION = 680;
 
 function imageSourceAtWidth(src, width) {
   return src.replace(/w=\d+/, `w=${width}`);
@@ -136,116 +97,12 @@ if (windLayer) {
   window.addEventListener("resize", () => scheduleWindPlacement(windLanes.map((_, index) => index)), { passive: true });
 }
 
-track.innerHTML = slides
-  .map(
-    ({ src, alt }, index) => `
-      <figure class="gallery__slide ${index === 0 ? "is-active" : ""}" aria-hidden="${index === 0 ? "false" : "true"}">
-        <img src="${src}" srcset="${imageSourceAtWidth(src, 1200)} 1200w, ${src} 1600w, ${imageSourceAtWidth(src, 2000)} 2000w" sizes="(max-width: 680px) calc(100vw - 2rem), 92vw" alt="${alt}" width="2400" height="1350" decoding="async" ${index === 0 ? "fetchpriority=\"high\"" : "loading=\"lazy\""} />
-      </figure>`,
-  )
-  .join("");
-
-dots.innerHTML = slides
-  .map(
-    ({ caption: slideCaption }, index) =>
-      `<button class="gallery__dot ${index === 0 ? "is-active" : ""}" type="button" data-slide-index="${index}" aria-label="Show poster ${index + 1} of ${slides.length}: ${slideCaption}" aria-current="${index === 0 ? "true" : "false"}"></button>`,
-  )
-  .join("");
-
-function warmSlide(index) {
-  const normalizedIndex = (index + slides.length) % slides.length;
-  const image = track.children[normalizedIndex]?.querySelector("img");
-  if (!image || image.dataset.warmed === "true") return;
-  image.dataset.warmed = "true";
-  image.loading = "eager";
-  // Decode off the transition path where supported, so a slide switch does
-  // not compete with image decoding on the main thread.
-  if (typeof image.decode === "function") image.decode().catch(() => {});
-}
-
-function scheduleSlideWarmup(index) {
-  const task = () => warmSlide(index);
-  if ("requestIdleCallback" in window) {
-    window.requestIdleCallback(task, { timeout: 800 });
-  } else {
-    window.setTimeout(task, 0);
-  }
-}
-
-function updateSlide(index) {
-  const previousIndex = activeIndex;
-  activeIndex = (index + slides.length) % slides.length;
-  warmSlide(activeIndex);
-  announcement.textContent = `Poster ${activeIndex + 1} of ${slides.length} selected: ${slides[activeIndex].caption}.`;
-  [...track.children].forEach((slide, slideIndex) => {
-    slide.setAttribute("aria-hidden", String(slideIndex !== activeIndex));
-    slide.classList.toggle("is-active", slideIndex === activeIndex);
-  });
-  [...dots.children].forEach((dot, dotIndex) => {
-    dot.classList.remove("is-entering", "is-leaving");
-    dot.classList.toggle("is-active", dotIndex === activeIndex);
-    dot.setAttribute("aria-current", String(dotIndex === activeIndex));
-  });
-
-  if (previousIndex !== activeIndex) {
-    const previousDot = dots.children[previousIndex];
-    const activeDot = dots.children[activeIndex];
-    // Restart both animations so rapid successive selections still read as a state change.
-    void activeDot.offsetWidth;
-    previousDot.classList.add("is-leaving");
-    activeDot.classList.add("is-entering");
-    window.clearTimeout(dotAnimationTimer);
-    dotAnimationTimer = window.setTimeout(() => {
-      previousDot.classList.remove("is-leaving");
-      activeDot.classList.remove("is-entering");
-    }, DOT_ANIMATION_DURATION);
-  }
-  scheduleSlideWarmup(activeIndex + 1);
-}
-
-function stopAutoplay() {
-  window.clearInterval(timer);
-  timer = undefined;
-}
-
-function startAutoplay() {
-  stopAutoplay();
-  if (!isPaused && isMotionEnabled() && galleryVisible && siteShell.classList.contains("is-ready")) {
-    scheduleSlideWarmup(activeIndex + 1);
-    timer = window.setInterval(() => updateSlide(activeIndex + 1), AUTOPLAY_INTERVAL);
-  }
-}
-
-function setPaused(nextPaused) {
-  isPaused = nextPaused;
-  startAutoplay();
-}
-
-dots.addEventListener("click", (event) => {
-  const target = event.target.closest("[data-slide-index]");
-  if (!target) return;
-  updateSlide(Number(target.dataset.slideIndex));
-});
-
-function warmSlideFromControl(event) {
-  const target = event.target.closest("[data-slide-index]");
-  if (target) warmSlide(Number(target.dataset.slideIndex));
-}
-
-dots.addEventListener("pointerover", warmSlideFromControl, { passive: true });
-dots.addEventListener("focusin", warmSlideFromControl);
-
 if ("IntersectionObserver" in window) {
   const titleWrap = document.querySelector(".hero__title-wrap");
   new IntersectionObserver(([entry]) => {
     titleWrap.classList.toggle("is-motion-paused", !entry.isIntersecting);
   }, { rootMargin: "120px" }).observe(titleWrap);
 
-  new IntersectionObserver(([entry]) => {
-    galleryVisible = entry.isIntersecting;
-    if (galleryVisible) startAutoplay();
-    else stopAutoplay();
-  }, { rootMargin: "160px" }).observe(gallery);
 }
 
 function leaveOpening() {
@@ -260,7 +117,6 @@ function leaveOpening() {
     siteShell.classList.remove("is-revealing");
     siteShell.classList.add("is-ready");
     pageRevealRing.classList.remove("is-active");
-    startAutoplay();
   }, PAGE_REVEAL_DURATION);
 }
 
@@ -272,7 +128,6 @@ function finishOpeningImmediately() {
   siteShell.classList.remove("is-revealing");
   siteShell.classList.add("is-ready");
   pageRevealRing.classList.remove("is-active");
-  startAutoplay();
 }
 
 function playOpening() {
@@ -301,8 +156,6 @@ skipOpeningLink.addEventListener("click", () => {
 });
 document.addEventListener("visibilitychange", () => {
   root.classList.toggle("page-hidden", document.hidden);
-  if (document.hidden) stopAutoplay();
-  else startAutoplay();
 });
 root.classList.toggle("page-hidden", document.hidden);
 
@@ -329,18 +182,14 @@ function applyMotionMode({ replay = false } = {}) {
     siteShell.classList.remove("is-revealing");
     siteShell.classList.add("is-ready");
     pageRevealRing.classList.remove("is-active");
-    setPaused(true);
     return;
   }
 
   if (replay || !siteShell.classList.contains("is-ready")) {
-    isPaused = false;
-    stopAutoplay();
     playOpening();
     return;
   }
 
-  setPaused(false);
 }
 
 motionToggle.addEventListener("click", () => {
