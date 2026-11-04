@@ -74,7 +74,95 @@ const achievements = [
     badge: "集",
     description: "集齐五种材质的曹先生。",
     target: 5,
+    material: "original",
+  },
+  {
+    id: "wooden",
+    title: "木已成曹",
+    badge: "木",
+    description: "发现木制曹先生。",
+    target: 1,
+    material: "wood",
+  },
+  {
+    id: "ivory",
+    title: "温柔的隐藏款",
+    badge: "牙",
+    description: "发现粘液象牙曹先生。",
+    target: 1,
+    material: "slime-ivory",
+  },
+  {
+    id: "seven",
+    title: "七曹会师",
+    badge: "七",
+    description: "集齐全部七种材质。",
+    target: 7,
     material: "all",
+  },
+  {
+    id: "rose-first",
+    title: "玫瑰收到请回答",
+    badge: "花",
+    description: "第一次命中玫瑰。",
+    target: 1,
+    material: "hits",
+  },
+  {
+    id: "rose-combo",
+    title: "曹无虚发",
+    badge: "准",
+    description: "本次连续命中 5 发。",
+    target: 5,
+    material: "combo",
+  },
+  {
+    id: "first-climax",
+    title: "渐入佳境",
+    badge: "燃",
+    description: "首次触发「曹先生高潮了」。",
+    target: 1,
+    material: "activations",
+  },
+  {
+    id: "hidden-fire",
+    title: "高潮限定",
+    badge: "隐",
+    description: "在高潮状态中射出隐藏材质。",
+    target: 1,
+    material: "hiddenShots",
+  },
+  {
+    id: "boost-15",
+    title: "初尝甜头",
+    badge: "初",
+    description: "累计高潮时间达到 15 秒。",
+    target: 15,
+    material: "boostTime",
+  },
+  {
+    id: "boost-60",
+    title: "渐入曹境",
+    badge: "境",
+    description: "累计高潮时间达到 60 秒。",
+    target: 60,
+    material: "boostTime",
+  },
+  {
+    id: "boost-180",
+    title: "曹常发挥",
+    badge: "常",
+    description: "累计高潮时间达到 180 秒。",
+    target: 180,
+    material: "boostTime",
+  },
+  {
+    id: "boost-600",
+    title: "持久曹先生",
+    badge: "久",
+    description: "累计高潮时间达到 600 秒。",
+    target: 600,
+    material: "boostTime",
   },
 ] as const;
 
@@ -82,10 +170,20 @@ const storageKey = "zhajinbang-cao-achievements-v1";
 
 export default function CaoAchievements({
   total,
+  hits,
+  bestCombo,
+  activations,
+  hiddenShots,
+  boostTime,
   unlocked,
   hidden,
 }: {
   total: number;
+  hits: number;
+  bestCombo: number;
+  activations: number;
+  hiddenShots: number;
+  boostTime: number;
   unlocked: string[];
   hidden: boolean;
 }) {
@@ -131,11 +229,20 @@ export default function CaoAchievements({
     () =>
       achievements.map((achievement) => {
         if (achievement.material === "all") return unlocked.length;
+        if (achievement.material === "original")
+          return ["normal", "mithril", "gold", "crystal", "demon"].filter(
+            (id) => unlocked.includes(id),
+          ).length;
+        if (achievement.material === "hits") return hits;
+        if (achievement.material === "combo") return bestCombo;
+        if (achievement.material === "activations") return activations;
+        if (achievement.material === "hiddenShots") return hiddenShots;
+        if (achievement.material === "boostTime") return boostTime;
         if (achievement.material)
           return Number(unlocked.includes(achievement.material));
         return total;
       }),
-    [total, unlocked],
+    [total, unlocked, hits, bestCombo, activations, hiddenShots, boostTime],
   );
 
   useEffect(() => {
@@ -198,7 +305,7 @@ export default function CaoAchievements({
                   aria-label={achievement.title + "进度"}
                 />
                 <small>
-                  {value.toLocaleString()} /{" "}
+                  {Math.floor(value).toLocaleString()} /{" "}
                   {achievement.target.toLocaleString()}
                 </small>
               </div>
