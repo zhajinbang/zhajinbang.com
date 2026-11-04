@@ -407,17 +407,9 @@ h1 span:nth-child(3) { padding-left: 1.1ch; }
 }
 
 @media (min-width: 681px) {
-  /* Desktop keeps the same wide gallery, but brings the title and its
-     right-aligned note into the first screen instead of leaving a tall void. */
-  .hero {
-    padding-top: clamp(3.25rem, 4.5vw, 5.25rem);
-    padding-bottom: clamp(2.5rem, 3.5vw, 4.5rem);
-  }
-
   .hero__intro {
     grid-template-columns: minmax(0, 1.12fr) minmax(20rem, .5fr);
     column-gap: clamp(3rem, 9vw, 10rem);
-    margin-bottom: clamp(2.5rem, 4vw, 4rem);
   }
 
   .hero__copy { width: min(100%, 24rem); }

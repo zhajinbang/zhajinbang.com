@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getMember, members } from "../../members";
 import styles from "./page.module.css";
+import CaoArcade from "../cao-arcade";
 
 export function generateStaticParams() {
   return members.map(({ slug }) => ({ slug }));
@@ -13,6 +14,8 @@ export default async function MemberPage(props: PageProps<"/members/[slug]">) {
   if (!member) {
     notFound();
   }
+
+  if (slug === "alpha") return <CaoArcade />;
 
   return (
     <main className={styles.page}>
