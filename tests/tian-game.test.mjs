@@ -236,19 +236,29 @@ test("fear overrides celebrations after a stumble and resets only on a new run",
   assert.equal(visibleTianReaction(createTianGame()), "smirk");
 });
 
-test("nine consecutive coins trigger a grin; missing a coin breaks that chain", () => {
+test("each 18 collected coins triggers a grin; missed coins do not reset the total", () => {
   const game = isolatedGame();
-  for (let coin = 0; coin < 9; coin++) {
+  for (let coin = 0; coin < 17; coin++) {
     game.entities = [{ id: coin, lane: 1, z: 0.2, kind: "coin", resolved: false }];
     stepTianGame(game, 0.02);
   }
+  assert.equal(game.coins, 17);
+  assert.equal(visibleTianReaction(game), "smirk");
+  game.entities = [{ id: 18, lane: 0, z: 0.2, kind: "coin", resolved: false }];
+  stepTianGame(game, 0.02);
+  assert.equal(game.coins, 17);
+  game.entities = [{ id: 19, lane: 1, z: 0.2, kind: "coin", resolved: false }];
+  stepTianGame(game, 0.02);
+  assert.equal(game.coins, 18);
   assert.equal(visibleTianReaction(game), "grin");
   game.elapsed = game.reactionUntil + 0.01;
   assert.equal(visibleTianReaction(game), "smirk", "a temporary taunt expires in game time");
-  game.coinStreak = 8;
-  game.entities = [{ id: 10, lane: 0, z: 0.2, kind: "coin", resolved: false }];
-  stepTianGame(game, 0.02);
-  assert.equal(game.coinStreak, 0);
+  for (let coin = 0; coin < 18; coin++) {
+    game.entities = [{ id: 20 + coin, lane: 1, z: 0.2, kind: "coin", resolved: false }];
+    stepTianGame(game, 0.02);
+    assert.equal(visibleTianReaction(game), coin < 17 ? "smirk" : "grin");
+  }
+  assert.equal(game.coins, 36);
 });
 
 test("three consecutive car jumps trigger the tongue taunt; lane dodges do not count", () => {

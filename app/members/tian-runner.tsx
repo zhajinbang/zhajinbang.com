@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { actTianGame, createTianGame, pauseTianGame, resumeTianGame, startTianGame, stepTianGame, tianSnapshot, type RunAction } from "./tian-game";
 import { drawTianGame, type RunAssets } from "./tian-renderer";
 import styles from "./tian-runner.module.css";
-import { caughtCaption, tianReactions } from "./tian-reactions";
+import { caughtCaption, caughtImage, tianReactions } from "./tian-reactions";
 
 const RECORD_KEY = "zhajinbang-tian-runner-record-v1";
 const assetPaths = {
@@ -220,15 +220,17 @@ export default function TianRunner() {
             <button className={styles.secondary} onClick={begin}>重新开始</button>
           </div></div>}
 
-          {ready && isOver && <div className={styles.overlay}><div className={styles.overlayCard} role="status">
-            <div className={styles.caughtReaction}>
-              <Image src={tianReactions.fear.image} alt="田先生惊恐表情" width={52} height={52} />
+          {ready && isOver && <div className={styles.overlay}><div className={`${styles.overlayCard} ${styles.caughtCard}`} role="status">
+            <div className={styles.caughtArt}>
+              <Image src={caughtImage} alt="田先生被抓后的表情" width={180} height={180} priority />
               <div><p className={styles.eyebrow}>CAUGHT YOU</p><strong>{tianReactions.fear.caption}</strong></div>
             </div>
+            <div className={styles.caughtInfo}>
             <h2 className={styles.caughtTitle}>{caughtCaption}</h2>
             <p>{`这次跑了 ${stats.distance.toLocaleString()} 米，下次再远一点。`}</p>
             <div className={styles.result}><strong>{stats.score.toLocaleString()}<small>本次得分</small></strong><span>{stats.coins} 枚金币<br />{stats.dodged} 次躲避</span></div>
             <button className={styles.primary} onClick={begin}>再给田先生一次机会 ↗</button>
+            </div>
           </div></div>}
 
           {isPlaying && <div className={styles.inGameHint}>← → 换道 <span>↑ 跳跃</span> ↓ 下滑</div>}

@@ -39,7 +39,6 @@ export type TianGame = {
   reaction: TianReaction;
   reactionUntil: number;
   carJumpStreak: number;
-  coinStreak: number;
   recordTarget: number;
   recordCelebrated: boolean;
 };
@@ -51,7 +50,7 @@ export function createTianGame(seed = 81377): TianGame {
     gap: 32, coins: 0, dodged: 0, hits: 0, invincible: 0, stumble: 0,
     nextRow: 0, rows: 0, entities: [], nextId: 0, seed: seed >>> 0 || 1,
     notice: "", noticeLeft: 0,
-    reaction: "smirk", reactionUntil: 0, carJumpStreak: 0, coinStreak: 0,
+    reaction: "smirk", reactionUntil: 0, carJumpStreak: 0,
     recordTarget: 0, recordCelebrated: false,
   };
 }
@@ -204,9 +203,8 @@ export function stepTianGame(game: TianGame, seconds: number) {
         : game.slide <= 0 && height < 0.35;
       if (sameLane && posture) {
         game.coins++;
-        game.coinStreak++;
-        if (game.coinStreak % 9 === 0) react(game, "grin");
-      } else game.coinStreak = 0;
+        if (game.coins % 18 === 0) react(game, "grin");
+      }
       continue;
     }
     const avoided = !sameLane || (item.kind === "barrier" && jumpHeight(game) >= 0.42)
@@ -221,7 +219,6 @@ export function stepTianGame(game: TianGame, seconds: number) {
     } else if (game.invincible <= 0) {
       game.hits++;
       game.carJumpStreak = 0;
-      game.coinStreak = 0;
       game.gap = game.hits === 1 ? 6 : 0;
       game.stumble = 0.7;
       game.invincible = 0.9;
