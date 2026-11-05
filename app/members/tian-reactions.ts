@@ -2,6 +2,8 @@ import type { TianReaction } from "./tian-game";
 
 export const caughtCaption = "这下田先生可惨了！";
 export const caughtImage = "/tian-runner/memes/caught.jpg";
+export const struggleImage = "/tian-runner/memes/struggle.jpg";
+export const rescuedImage = "/tian-runner/memes/rescued.jpg";
 
 export const tianReactions: Record<TianReaction, { name: string; caption: string; image: string; condition: string }> = {
   tongue: { name: "吐舌头", caption: "suck my dick", image: "/tian-runner/memes/tongue.jpg", condition: "连续跳过 3 辆轿车" },

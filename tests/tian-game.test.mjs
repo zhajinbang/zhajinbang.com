@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { actTianGame, baseRunSpeed, createTianGame, entityPace, JUMP_SECONDS, pauseTianGame, resumeTianGame, rowInterval, runScore, runSpeed, startTianGame, stepTianGame, visibleTianReaction } from "../app/members/tian-game.ts";
+import { actTianGame, baseRunSpeed, createTianGame, entityPace, JUMP_SECONDS, pauseTianGame, resumeTianGame, rowInterval, runScore, runSpeed, startTianGame, stepTianGame, tapTianStruggle, visibleTianReaction } from "../app/members/tian-game.ts";
 
 function isolatedGame(kind, options = {}) {
   const game = createTianGame(42);
@@ -44,7 +44,8 @@ test("a collision costs pursuit distance once, with brief invulnerability", () =
   stepTianGame(game, 0.02);
   assert.equal(game.hits, 2);
   assert.equal(game.gap, 0);
-  assert.equal(game.status, "caught");
+  assert.equal(game.status, "struggle");
+  assert.equal(game.strugglesUsed, 1);
 });
 
 test("pause freezes the countdown, distance, actions and obstacles", () => {
@@ -86,7 +87,7 @@ test("coins are collected only in the occupied lane and only once", () => {
 });
 
 test("catch is terminal; retry starts with clean run statistics", () => {
-  const caught = isolatedGame("cart", { gap: 6, hits: 1 });
+  const caught = isolatedGame("cart", { gap: 6, hits: 1, strugglesUsed: 2 });
   stepTianGame(caught, 0.02);
   assert.equal(caught.status, "caught");
   const before = structuredClone(caught); stepTianGame(caught, 1); actTianGame(caught, "left");
@@ -297,4 +298,109 @@ test("shush triggers once per 1,000m, not at intermediate 500m marks", () => {
     stepTianGame(game, 0.02);
     assert.equal(game.reactionUntil, expiry, "the same milestone must not restart the popup every frame");
   }
+});
+
+function capturedGame(options = {}) {
+  const game = isolatedGame("cart", { hits: 1, gap: 6, ...options });
+  stepTianGame(game, 0.02);
+  return game;
+}
+
+test("a capture consumes one opportunity and freezes the road during the struggle", () => {
+  const game = capturedGame({ distance: 320, coins: 12, dodged: 5 });
+  assert.equal(game.status, "struggle");
+  assert.equal(game.strugglesUsed, 1);
+  assert.equal(game.struggleTarget, 20);
+  assert.equal(game.struggleLeft, 5);
+  const { distance, elapsed } = game; const score = runScore(game);
+  const entityPositions = game.entities.map((item) => item.z);
+  for (let frame = 0; frame < 20; frame++) stepTianGame(game, 0.05);
+  assert.equal(game.distance, distance);
+  assert.equal(game.elapsed, elapsed);
+  assert.equal(runScore(game), score);
+  assert.deepEqual(game.entities.map((item) => item.z), entityPositions);
+  assert.equal(game.strugglesUsed, 1);
+});
+
+test("20 taps rescue the first capture, preserve the run, and give a protected restart", () => {
+  const game = capturedGame({ distance: 320, coins: 12, dodged: 5 });
+  const distance = game.distance; const speed = baseRunSpeed(distance); const score = runScore(game);
+  game.entities.push({ id: 100, lane: 1, kind: "car", z: speed, resolved: false, pace: 1.6 });
+  game.entities.push({ id: 101, lane: 0, kind: "barrier", z: 500, resolved: false });
+  game.nextRow = distance + 1;
+  for (let tap = 0; tap < 19; tap++) tapTianStruggle(game);
+  assert.equal(game.status, "struggle");
+  tapTianStruggle(game);
+  assert.equal(game.status, "rescued");
+  assert.equal(game.rescues, 1);
+  assert.equal(game.hits, 0);
+  assert.equal(game.gap, 32);
+  assert.equal(game.invincible, 2);
+  assert.equal(game.distance, distance);
+  assert.equal(game.coins, 12);
+  assert.equal(runScore(game), score);
+  assert.equal(baseRunSpeed(game.distance), speed);
+  assert.ok(!game.entities.some((item) => item.id === 100));
+  assert.ok(game.entities.some((item) => item.id === 101));
+  assert.ok(game.nextRow >= distance + speed);
+  for (let frame = 0; frame < 60; frame++) stepTianGame(game, 0.05);
+  assert.equal(game.status, "running");
+  assert.equal(game.invincible, 2, "protection begins when running resumes, not during the success display");
+  game.entities = [{ id: 102, lane: 1, kind: "cart", z: 0.2, resolved: false }];
+  stepTianGame(game, 0.02);
+  assert.equal(game.hits, 0);
+});
+
+test("the second struggle needs 28 taps, and the third capture ends the run", () => {
+  const game = capturedGame();
+  for (let tap = 0; tap < 20; tap++) tapTianStruggle(game);
+  for (let frame = 0; frame < 60; frame++) stepTianGame(game, 0.05);
+  for (let attempt = 2; attempt <= 3; attempt++) {
+    game.hits = 1; game.invincible = 0;
+    game.entities = [{ id: 100 + attempt, lane: 1, kind: "cart", z: 0.2, resolved: false }];
+    stepTianGame(game, 0.02);
+    if (attempt === 3) break;
+    assert.equal(game.status, "struggle");
+    assert.equal(game.strugglesUsed, 2);
+    assert.equal(game.struggleTarget, 28);
+    for (let tap = 0; tap < 27; tap++) tapTianStruggle(game);
+    assert.equal(game.status, "struggle");
+    tapTianStruggle(game);
+    assert.equal(game.rescues, 2);
+    for (let frame = 0; frame < 60; frame++) stepTianGame(game, 0.05);
+  }
+  assert.equal(game.status, "caught");
+  assert.equal(game.strugglesUsed, 2);
+  const before = structuredClone(game);
+  for (let tap = 0; tap < 100; tap++) tapTianStruggle(game);
+  assert.deepEqual(game, before);
+  assert.equal(createTianGame().strugglesUsed, 0);
+});
+
+test("timing out with insufficient taps enters the normal failure result", () => {
+  const game = capturedGame();
+  for (let tap = 0; tap < 19; tap++) tapTianStruggle(game);
+  for (let frame = 0; frame < 100; frame++) stepTianGame(game, 0.05);
+  assert.equal(game.status, "caught");
+  assert.equal(game.struggleLeft, 0);
+  assert.equal(game.rescues, 0);
+  tapTianStruggle(game);
+  assert.equal(game.status, "caught", "a late tap cannot revive an expired struggle");
+});
+
+test("pause freezes both struggle and success timers and rejects taps", () => {
+  const game = capturedGame();
+  pauseTianGame(game);
+  assert.equal(game.resumeStatus, "struggle");
+  const before = structuredClone(game);
+  stepTianGame(game, 100); tapTianStruggle(game);
+  assert.deepEqual(game, before);
+  resumeTianGame(game);
+  for (let tap = 0; tap < 20; tap++) tapTianStruggle(game);
+  pauseTianGame(game);
+  assert.equal(game.resumeStatus, "rescued");
+  stepTianGame(game, 100);
+  assert.equal(game.countdown, 3);
+  resumeTianGame(game);
+  assert.equal(game.status, "rescued");
 });

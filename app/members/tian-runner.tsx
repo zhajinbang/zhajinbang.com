@@ -3,16 +3,18 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { actTianGame, createTianGame, pauseTianGame, resumeTianGame, startTianGame, stepTianGame, tianSnapshot, type RunAction } from "./tian-game";
+import { actTianGame, createTianGame, MAX_STRUGGLES, pauseTianGame, resumeTianGame, startTianGame, stepTianGame, tapTianStruggle, tianSnapshot, type RunAction } from "./tian-game";
 import { drawTianGame, type RunAssets } from "./tian-renderer";
 import styles from "./tian-runner.module.css";
-import { caughtCaption, caughtImage, tianReactions } from "./tian-reactions";
+import { caughtCaption, caughtImage, rescuedImage, struggleImage, tianReactions } from "./tian-reactions";
 
 const RECORD_KEY = "zhajinbang-tian-runner-record-v1";
 const assetPaths = {
   map: "/tian-runner/maps/v1/yulong-street-background.png",
   runner: "/tian-runner/v2/tian-run-back.png",
   chaser: "/tian-runner/v2/player-run-back.png",
+  struggle: struggleImage,
+  rescued: rescuedImage,
 };
 
 function readRecord() {
@@ -23,6 +25,7 @@ function readRecord() {
 export default function TianRunner() {
   const game = useRef(createTianGame());
   const canvas = useRef<HTMLCanvasElement>(null);
+  const struggleButton = useRef<HTMLButtonElement>(null);
   const assets = useRef<RunAssets | null>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const [stats, setStats] = useState(() => tianSnapshot(game.current));
@@ -54,6 +57,12 @@ export default function TianRunner() {
     publish();
   }, [publish]);
   const action = useCallback((value: RunAction) => actTianGame(game.current, value), []);
+  const struggleTap = useCallback(() => { tapTianStruggle(game.current); publish(); }, [publish]);
+
+  useEffect(() => {
+    if (stats.status === "struggle") struggleButton.current?.focus({ preventScroll: true });
+    if (stats.status === "running") canvas.current?.focus({ preventScroll: true });
+  }, [stats.status]);
 
   useEffect(() => {
     try { setBest(readRecord()); } catch { setRecordAvailable(false); }
@@ -122,7 +131,12 @@ export default function TianRunner() {
     const suspend = () => { pauseTianGame(game.current); publish(); };
     const visibility = () => { if (document.hidden) suspend(); };
     const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
       if (event.ctrlKey || event.metaKey || event.altKey || event.target instanceof HTMLInputElement) return;
+      if (game.current.status === "struggle" && !(event.target instanceof HTMLButtonElement) && !(event.target instanceof HTMLAnchorElement)
+        && (event.code === "Space" || event.code === "Enter")) {
+        event.preventDefault(); if (!event.repeat) struggleTap(); return;
+      }
       if ((event.target instanceof HTMLButtonElement || event.target instanceof HTMLAnchorElement) && (event.code === "Space" || event.code === "Enter")) return;
       if (event.code === "Escape" || event.code === "KeyP") {
         event.preventDefault(); if (!event.repeat) togglePause(); return;
@@ -144,7 +158,7 @@ export default function TianRunner() {
       window.removeEventListener("blur", suspend);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [action, publish, togglePause]);
+  }, [action, publish, togglePause, struggleTap]);
 
   return (
     <main className={styles.page} lang="zh-CN">
@@ -181,7 +195,7 @@ export default function TianRunner() {
 
           {ready && <div className={styles.stageTop}>
             <span className={styles.location}>↗ 玉龙大街<span>CHIFENG</span></span>
-            {(isPlaying || stats.status === "countdown" || stats.status === "paused") &&
+            {(isPlaying || stats.status === "countdown" || stats.status === "paused" || stats.status === "struggle" || stats.status === "rescued") &&
               <button className={styles.pause} onClick={togglePause} aria-label={stats.status === "paused" ? "继续游戏" : "暂停游戏"}>
                 {stats.status === "paused" ? "▶ 继续" : "Ⅱ 暂停"}
               </button>}
@@ -207,7 +221,7 @@ export default function TianRunner() {
 
           {ready && stats.status === "ready" && <div className={styles.overlay}><div className={styles.overlayCard}>
             <p className={styles.eyebrow}>肛门守护计划 / 01</p><h2>我要回皇家帝苑！</h2>
-            <p>无限模式，没有终点，越跑越快。<br />第一次磕绊，壮汉逼近；第二次就会被抓。</p>
+            <p>无限模式，没有终点，越跑越快。<br />被抓后可连击挣脱，每局最多两次机会。</p>
             <button className={styles.primary} onClick={begin}>开始逃跑 <span>↗</span></button>
             <span className={styles.overlayHint}>方向键 / WASD 操作 · 手机支持滑动</span>
           </div></div>}
@@ -215,9 +229,40 @@ export default function TianRunner() {
           {ready && stats.status === "countdown" && <div className={styles.countdown} aria-live="polite"><strong>{stats.countdown || "跑！"}</strong><span>泳圈就位，准备开溜</span></div>}
 
           {ready && stats.status === "paused" && <div className={styles.overlay}><div className={styles.overlayCard}>
-            <p className={styles.eyebrow}>TAKE A BREATHER</p><h2>田先生喘口气。</h2><p>追逐已暂停。准备好了再跑。</p>
-            <button className={styles.primary} onClick={togglePause}>继续逃跑 ↗</button>
+            <p className={styles.eyebrow}>TAKE A BREATHER</p><h2>田先生喘口气。</h2><p>{stats.pausedFrom === "struggle" ? "挣脱计时已暂停。准备好了再继续点。" : "追逐已暂停。准备好了再跑。"}</p>
+            <button className={styles.primary} onClick={togglePause}>{stats.pausedFrom === "struggle" ? "继续挣脱 ↗" : "继续逃跑 ↗"}</button>
             <button className={styles.secondary} onClick={begin}>重新开始</button>
+          </div></div>}
+
+          {ready && stats.status === "struggle" && <div className={styles.overlay}><div className={`${styles.overlayCard} ${styles.struggleCard}`} role="region" aria-label="连击挣脱">
+            <div className={styles.struggleArt}>
+              <Image key={stats.struggleTaps} src={struggleImage} alt="田先生正在挣脱的表情" width={180} height={180} priority unoptimized />
+              <span>本局第 {stats.strugglesUsed} 次挣脱 / 最多 {MAX_STRUGGLES} 次</span>
+            </div>
+            <div className={styles.struggleHeading}>
+              <p className={styles.eyebrow}>BREAK FREE</p>
+              <h2>田先生快被腌入味了！</h2>
+              <p>别光看，快点！腋毛都要起静电了！</p>
+            </div>
+            <div className={styles.struggleMeters}>
+              <div><span>脱手进度 <b>{stats.struggleTaps} / {stats.struggleTarget}</b></span><strong>还剩 {stats.struggleLeft.toFixed(1)} 秒</strong></div>
+              <progress value={stats.struggleTaps} max={stats.struggleTarget} aria-label="挣脱进度" />
+            </div>
+            <button ref={struggleButton} className={`${styles.primary} ${styles.struggleButton}`} onClick={struggleTap}
+              onKeyDown={(event) => {
+                if (event.code !== "Space" && event.code !== "Enter") return;
+                event.preventDefault(); if (!event.repeat) struggleTap();
+              }}>猛猛挣扎！<span>↗</span></button>
+            <p className={styles.struggleHint}>连续点击 / 手机点按 / 反复按空格 · 长按不算连击</p>
+          </div></div>}
+
+          {ready && stats.status === "rescued" && <div className={styles.overlay}><div className={`${styles.overlayCard} ${styles.caughtCard} ${styles.rescuedCard}`} role="status">
+            <div className={styles.caughtArt}><Image src={rescuedImage} alt="田先生挣脱成功后的表情" width={180} height={180} priority unoptimized /><strong>挣脱成功！</strong></div>
+            <div className={styles.caughtInfo}>
+              <h2 className={styles.caughtTitle}>一身臭汗，换一条生路！</h2>
+              <p>{stats.rescues === 1 ? "我这一身腱子肉，是用来跑路的！" : "同一个田先生，你还能抓住两次？！"}</p>
+              <div className={styles.resumeCountdown}><strong>{stats.countdown}</strong><span>秒后继续逃跑<br />距离、金币、速度保留 · 碰撞保护 2 秒</span></div>
+            </div>
           </div></div>}
 
           {ready && isOver && <div className={styles.overlay}><div className={`${styles.overlayCard} ${styles.caughtCard}`} role="status">
@@ -256,8 +301,9 @@ export default function TianRunner() {
           <div className={`${styles.chasePanel} ${danger ? styles.close : ""}`}>
             <div className={styles.chaseHeading}><span>身后的脚步声</span><strong>{stats.gap}<small>m</small></strong></div>
             <div className={styles.raceMeta}><span>磕绊 {stats.hits} / 2</span><span>速度 {stats.tempo.toFixed(2)}×</span></div>
+            <div className={styles.escapeBudget}><span>挣脱机会</span><strong>{stats.strugglesLeft} / {MAX_STRUGGLES}</strong></div>
             <div className={styles.chaseTrack} aria-hidden="true"><span>壮汉</span><i style={{ width: `${Math.max(8, stats.gap / 60 * 100)}%` }} /><b>田</b></div>
-            <p>{isOver ? "这下田先生可惨了！" : danger ? "就在身后！再撞一次就被抓。" : "保持距离，让他追去吧。"}</p>
+            <p>{isOver ? "这下田先生可惨了！" : stats.status === "struggle" ? "快点，帮田先生挣脱！" : stats.status === "rescued" ? "挣脱成功，准备继续跑路。" : danger ? "就在身后！再撞一次就被抓。" : "保持距离，让他追去吧。"}</p>
           </div>
 
           <div className={styles.controlsPanel}>

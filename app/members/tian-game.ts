@@ -1,4 +1,4 @@
-export type RunStatus = "ready" | "countdown" | "running" | "paused" | "caught";
+export type RunStatus = "ready" | "countdown" | "running" | "paused" | "struggle" | "rescued" | "caught";
 export type RunAction = "left" | "right" | "jump" | "slide";
 export type ObstacleKind = "barrier" | "arch" | "cart" | "car" | "truck" | "coin";
 export type CoinPickup = "ground" | "air" | "low";
@@ -12,10 +12,13 @@ export const LOOK_AHEAD = 120;
 export const START_SPEED = 32;
 export const JUMP_SECONDS = 0.86;
 export const SLIDE_SECONDS = 0.9;
+export const MAX_STRUGGLES = 2;
+export const STRUGGLE_SECONDS = 5;
+export const STRUGGLE_TARGETS = [20, 28] as const;
 
 export type TianGame = {
   status: RunStatus;
-  resumeStatus: "running" | "countdown";
+  resumeStatus: "running" | "countdown" | "struggle" | "rescued";
   countdown: number;
   elapsed: number;
   distance: number;
@@ -41,6 +44,11 @@ export type TianGame = {
   carJumpStreak: number;
   recordTarget: number;
   recordCelebrated: boolean;
+  strugglesUsed: number;
+  rescues: number;
+  struggleLeft: number;
+  struggleTaps: number;
+  struggleTarget: number;
 };
 
 export function createTianGame(seed = 81377): TianGame {
@@ -52,6 +60,7 @@ export function createTianGame(seed = 81377): TianGame {
     notice: "", noticeLeft: 0,
     reaction: "smirk", reactionUntil: 0, carJumpStreak: 0,
     recordTarget: 0, recordCelebrated: false,
+    strugglesUsed: 0, rescues: 0, struggleLeft: 0, struggleTaps: 0, struggleTarget: STRUGGLE_TARGETS[0],
   };
 }
 
@@ -69,7 +78,7 @@ export function startTianGame(game: TianGame) {
 }
 
 export function pauseTianGame(game: TianGame) {
-  if (game.status === "running" || game.status === "countdown") {
+  if (game.status === "running" || game.status === "countdown" || game.status === "struggle" || game.status === "rescued") {
     game.resumeStatus = game.status;
     game.status = "paused";
   }
@@ -77,6 +86,33 @@ export function pauseTianGame(game: TianGame) {
 
 export function resumeTianGame(game: TianGame) {
   if (game.status === "paused") game.status = game.resumeStatus;
+}
+
+function enterStruggle(game: TianGame) {
+  if (game.strugglesUsed >= MAX_STRUGGLES) { game.status = "caught"; return; }
+  game.struggleTarget = STRUGGLE_TARGETS[game.strugglesUsed];
+  game.strugglesUsed++;
+  game.struggleTaps = 0;
+  game.struggleLeft = STRUGGLE_SECONDS;
+  game.jump = 0; game.slide = 0; game.stumble = 0;
+  game.status = "struggle";
+}
+
+export function tapTianStruggle(game: TianGame) {
+  if (game.status !== "struggle" || game.struggleLeft <= 0) return;
+  game.struggleTaps = Math.min(game.struggleTarget, game.struggleTaps + 1);
+  if (game.struggleTaps < game.struggleTarget) return;
+  game.rescues++;
+  game.status = "rescued";
+  game.countdown = 3;
+  game.hits = 0; game.gap = 32; game.invincible = 2;
+  game.jump = 0; game.slide = 0; game.stumble = 0;
+  game.notice = ""; game.noticeLeft = 0;
+  game.reaction = "smirk"; game.reactionUntil = game.elapsed + 3;
+  game.carJumpStreak = 0;
+  const speed = baseRunSpeed(game.distance);
+  game.entities = game.entities.filter((item) => item.z / entityPace(item) > speed * 2);
+  game.nextRow = Math.max(game.nextRow, game.distance + speed);
 }
 
 export function actTianGame(game: TianGame, action: RunAction) {
@@ -164,13 +200,18 @@ function spawnRow(game: TianGame) {
 }
 
 export function stepTianGame(game: TianGame, seconds: number) {
-  if (game.status !== "running" && game.status !== "countdown") return;
+  if (!["running", "countdown", "struggle", "rescued"].includes(game.status)) return;
   if (!Number.isFinite(seconds) || seconds <= 0) return;
   // A suspended tab must never skip an obstacle or consume a run on resume.
   const dt = Math.min(seconds, 0.05);
-  if (game.status === "countdown") {
+  if (game.status === "struggle") {
+    game.struggleLeft = Math.max(0, game.struggleLeft - dt);
+    if (game.struggleLeft <= 0.000001) { game.struggleLeft = 0; game.status = "caught"; }
+    return;
+  }
+  if (game.status === "countdown" || game.status === "rescued") {
     game.countdown = Math.max(0, game.countdown - dt);
-    if (game.countdown <= 0) game.status = "running";
+    if (game.countdown <= 0.000001) { game.countdown = 0; game.status = "running"; }
     return;
   }
   game.elapsed += dt;
@@ -224,7 +265,7 @@ export function stepTianGame(game: TianGame, seconds: number) {
       game.invincible = 0.9;
       game.notice = game.hits === 1 ? "第一次磕绊！再撞一次就被抓了" : "第二次磕绊，被抓住了！";
       game.noticeLeft = 2.3;
-      if (game.hits >= 2) { game.status = "caught"; break; }
+      if (game.hits >= 2) { enterStruggle(game); break; }
     }
   }
   game.entities = game.entities.filter((item) => item.z > -18);
@@ -241,6 +282,10 @@ export function tianSnapshot(game: TianGame) {
     seconds: Math.floor(game.elapsed), countdown: Math.ceil(game.countdown),
     tempo: baseRunSpeed(game.distance) / START_SPEED,
     reaction: visibleTianReaction(game),
+    strugglesLeft: MAX_STRUGGLES - game.strugglesUsed, strugglesUsed: game.strugglesUsed,
+    rescues: game.rescues, struggleLeft: game.struggleLeft,
+    struggleTaps: game.struggleTaps, struggleTarget: game.struggleTarget,
+    pausedFrom: game.resumeStatus,
     notice: game.noticeLeft > 0 ? game.notice : "",
   };
 }

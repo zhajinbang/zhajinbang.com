@@ -80,6 +80,31 @@
 .caughtInfo { min-width: 0; }
 .caughtInfo > p { margin: 0 0 18px; color: #b8a783; font-size: 12px; line-height: 1.6; }
 .overlayCard .caughtTitle { font-size: clamp(23px, 2.5vw, 28px); margin-bottom: 13px; }
+.escapeBudget { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; padding-top: 9px; border-top: 1px solid #3c301e; font-size: 10px; color: #bda675; }
+.escapeBudget strong { font-weight: 600; color: #edcd8b; }
+.struggleCard { display: grid; grid-template-columns: 180px minmax(0, 1fr); grid-template-areas: "art heading" "art meters" "art button" "hint hint"; align-items: center; gap: 13px 24px; width: min(650px, 100%); padding: 22px; max-height: calc(100% - 12px); overflow-y: auto; }
+.struggleArt { grid-area: art; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.struggleArt img { width: 180px; height: 180px; object-fit: cover; object-position: 60% 60%; border: 2px solid #d3aa5b; border-radius: 4px; animation: struggle-tap 120ms ease-out; }
+.struggleArt > span { color: #aa8f5c; font-size: 10px; }
+.struggleHeading { grid-area: heading; }
+.struggleHeading .eyebrow { margin-bottom: 6px; }
+.struggleHeading h2 { font-size: 26px; line-height: 1.2; margin: 0 0 9px; }
+.struggleHeading > p:last-child { margin: 0; color: #bca77d; font-size: 12px; line-height: 1.6; }
+.struggleMeters { grid-area: meters; }
+.struggleMeters > div { display: flex; justify-content: space-between; gap: 10px; font-size: 10px; color: #bda675; }
+.struggleMeters b { color: #f3d695; font-weight: 600; }
+.struggleMeters strong { color: #f7d58b; font-weight: 600; font-variant-numeric: tabular-nums; }
+.struggleMeters progress { display: block; width: 100%; height: 9px; margin-top: 9px; appearance: none; border: 0; background: #392e1c; color: #e9bc5d; }
+.struggleMeters progress::-webkit-progress-bar { background: #392e1c; }
+.struggleMeters progress::-webkit-progress-value { background: #e9bc5d; }
+.struggleMeters progress::-moz-progress-bar { background: #e9bc5d; }
+.struggleButton { grid-area: button; min-height: 59px; font-size: 20px; touch-action: manipulation; user-select: none; }
+.struggleButton:active { background: #ffdd88; transform: scale(.985); }
+.struggleCard > .struggleHint { grid-area: hint; text-align: center; margin: 0; color: #8f7b56; font-size: 10px; line-height: 1.4; }
+.resumeCountdown { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+.resumeCountdown > strong { font-size: 54px; color: #f4d58c; font-weight: 450; line-height: 1; }
+.resumeCountdown > span { font-size: 11px; color: #bda675; line-height: 1.8; }
+@keyframes struggle-tap { from { transform: scale(.96) rotate(-1deg); } to { transform: scale(1) rotate(0); } }
 .controlsPanel { padding: 3px 1px 0; }
 .controlsPanel > div { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; }
 .controlsPanel kbd { min-width: 23px; padding: 3px 5px; text-align: center; font-family: inherit; font-size: 10px; color: #dac08a; border: 1px solid #4a3c25; background: #15130f; border-radius: 3px; }
@@ -151,6 +176,19 @@
   .caughtInfo > p { grid-area: distance; margin: 0; font-size: 11px; }
   .caughtInfo .result { grid-area: score; padding: 8px 0 4px; border-top: 1px solid #4a3920; }
   .caughtInfo .primary { grid-area: button; }
+  .struggleCard { grid-template-columns: 104px minmax(0, 1fr); grid-template-areas: "art heading" "meters meters" "button button" "hint hint"; gap: 9px 12px; padding: 14px; }
+  .struggleArt { gap: 6px; }
+  .struggleArt img { width: 104px; height: 104px; }
+  .struggleArt > span { font-size: 8px; line-height: 1.4; }
+  .struggleHeading .eyebrow { font-size: 8px; margin-bottom: 4px; }
+  .struggleHeading h2 { font-size: 20px; margin-bottom: 6px; }
+  .struggleHeading > p:last-child { font-size: 10px; line-height: 1.5; }
+  .struggleButton { min-height: 53px; font-size: 19px; }
+  .struggleCard > .struggleHint { font-size: 8px; }
+  .rescuedCard { grid-template-areas: "art title" "art distance" "score score"; }
+  .resumeCountdown { grid-area: score; justify-content: center; margin-top: 3px; padding-top: 8px; border-top: 1px solid #49391e; }
+  .resumeCountdown > strong { font-size: 42px; }
+  .resumeCountdown > span { font-size: 9px; }
   .sidebar { grid-template-columns: 1fr 1fr; gap: 10px; }
   .scorePanel { padding: 13px; }
   .score { font-size: 33px; padding-bottom: 13px; }
@@ -165,4 +203,4 @@
   .touchControls > button { flex: 1; min-height: 48px; min-width: 0; }
   .footer { font-size: 7px; letter-spacing: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .chaseTrack > i { transition: none; } .stageReaction { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .chaseTrack > i { transition: none; } .stageReaction, .struggleArt img { animation: none; } }
