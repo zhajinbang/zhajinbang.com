@@ -1,0 +1,155 @@
+.page { max-width: 1660px; min-height: 100svh; margin: 0 auto; padding: 22px clamp(18px, 3.5vw, 58px) 14px; background: #090909; color: #f2dca5; }
+.header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid #45371f; gap: 16px; }
+.back, .edition, .version, .eyebrow, .footer, .record > span { font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: .14em; }
+.back { color: #e8c985; font-weight: 700; }
+.back:hover { color: #fff0c8; }
+.edition { color: #9c875f; }
+.version { color: #9c875f; }
+.titleRow { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding: 22px 0; }
+.eyebrow { margin: 0 0 9px; color: #bd9750; line-height: 1.5; }
+.titleRow h1 { display: block; max-width: none; margin: 0; font-size: clamp(29px, 3.4vw, 48px); font-weight: 750; line-height: 1.1; letter-spacing: -.05em; text-wrap: nowrap; }
+.titleRow h1 > span { display: inline; color: #c49139; }
+.tagline { margin: 0; text-align: right; font-size: 12px; line-height: 1.9; color: #c3ad80; }
+.tagline > span { color: #7f7156; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 235px; gap: 22px; align-items: stretch; }
+.range { min-width: 0; }
+.stage { position: relative; min-width: 0; min-height: 420px; height: min(65vh, 680px); overflow: hidden; border: 1px solid #745c32; border-radius: 3px; background: #181916; isolation: isolate; }
+.canvas { display: block; width: 100%; height: 100%; touch-action: none; outline-offset: -4px; }
+.stageTop { position: absolute; z-index: 2; inset: 15px 16px auto; display: flex; justify-content: space-between; align-items: start; pointer-events: none; gap: 10px; }
+.location { display: flex; flex-direction: column; gap: 3px; background: #10100ee6; border: 1px solid #a8874555; padding: 10px 14px; color: #f8dfa4; font-size: 13px; font-weight: 650; }
+.location > span { font: 8px ui-monospace, monospace; letter-spacing: .21em; color: #baa87e; }
+.pause { pointer-events: auto; border: 1px solid #bba56a77; background: #10100ee6; color: #f8dfa4; padding: 10px 14px; cursor: pointer; font-size: 11px; }
+.pause:hover { background: #332819; }
+.overlay { position: absolute; z-index: 3; inset: 0; display: grid; place-items: center; padding: 24px; background: linear-gradient(90deg, #080908d9, #08090888 62%, #08090844); backdrop-filter: blur(2px); }
+.overlayCard { width: min(380px, 100%); padding: 25px 28px; background: #0e0d0bea; border: 1px solid #a483444f; box-shadow: 0 20px 70px #0005; }
+.overlayCard h2 { margin: 0 0 18px; font-size: clamp(25px, 3vw, 38px); font-weight: 750; letter-spacing: -.045em; line-height: 1.2; }
+.overlayCard > p:not(.eyebrow) { margin: 0 0 24px; color: #b8a783; font-size: 13px; line-height: 1.8; }
+.primary, .secondary { width: 100%; min-height: 47px; border: 1px solid #d5ad60; background: #d9b15e; color: #18140c; padding: 10px 16px; font-size: 14px; font-weight: 700; cursor: pointer; }
+.primary { display: flex; justify-content: space-between; align-items: center; }
+.primary:hover { background: #f1d38c; }
+.secondary { margin-top: 10px; color: #cdbb96; background: transparent; border-color: #665332; font-size: 12px; }
+.secondary:hover { background: #2a2316; }
+.overlayHint { display: block; margin-top: 13px; text-align: center; color: #857758; font-size: 10px; }
+.countdown { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; background: #08080835; color: #fff1bd; text-shadow: 0 2px 20px #0008; }
+.countdown > strong { font-size: 100px; font-weight: 450; line-height: 1.25; }
+.countdown > span { font-size: 13px; background: #17130dd9; padding: 8px 14px; }
+.stageReaction { position: absolute; z-index: 2; top: 12px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 17px; width: min(410px, calc(100% - 210px)); padding: 10px 17px 10px 10px; border: 1px solid #c6a057; border-radius: 5px; background: linear-gradient(110deg, #14110cf5, #28200fef); box-shadow: 0 9px 28px #0005, 0 0 20px #e2b45133; pointer-events: none; animation: reaction-arrive 320ms cubic-bezier(.2,.9,.3,1) both; }
+.stageReaction img { flex-shrink: 0; width: 88px; height: 88px; object-fit: cover; object-position: 50% 35%; border: 2px solid #d8b266; border-radius: 4px; filter: brightness(1.15); }
+.stageReaction > div { min-width: 0; }
+.stageReaction span { display: block; margin-bottom: 7px; color: #c2a46b; font-size: 10px; line-height: 1.3; }
+.stageReaction strong { display: block; color: #ffe6aa; font-size: clamp(21px, 2.4vw, 29px); font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; text-shadow: 0 2px 10px #0008; }
+.fearReaction { border-color: #ffd27b; background: linear-gradient(110deg, #39230bf5, #1d150bef); box-shadow: 0 9px 28px #0006, 0 0 28px #e8ab3e55; }
+.fearReaction img { width: 104px; height: 104px; }
+.fearReaction strong { font-size: clamp(28px, 3vw, 38px); color: #ffdd8e; }
+@keyframes reaction-arrive { from { opacity: 0; transform: translateX(-50%) translateY(-7px) scale(.9); } 70% { opacity: 1; transform: translateX(-50%) scale(1.025); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+.inGameHint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); padding: 7px 14px; background: #10100dbb; color: #ffe5ac; font-size: 10px; white-space: nowrap; pointer-events: none; }
+.inGameHint > span { margin-inline: 14px; }
+.danger { border-color: #e5ad4a; box-shadow: inset 0 0 40px #d59c2b4d, 0 0 20px #d59c2b28; }
+.result { display: flex; align-items: center; justify-content: space-between; padding: 0 0 22px; }
+.result strong { color: #f5d897; font-size: 36px; line-height: 1; font-weight: 450; }
+.result small { display: block; color: #9e8a64; font-size: 10px; margin-top: 9px; }
+.result > span { font-size: 12px; line-height: 1.9; color: #b8a783; }
+.sidebar { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.scorePanel { padding: 18px 18px 14px; border: 1px solid #534224; background: linear-gradient(135deg, #19150e, #0e0e0c); }
+.score { font-size: clamp(38px, 4vw, 56px); font-weight: 350; line-height: 1; letter-spacing: -.055em; padding: 4px 0 18px; }
+.score > span { display: block; font-size: 11px; color: #9c875f; margin-top: 9px; letter-spacing: 0; }
+.metrics { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #3f3421; padding: 16px 0 18px; gap: 18px; }
+.metrics strong { font-size: 23px; font-weight: 450; }
+.metrics strong > small, .chaseHeading small { font-size: 10px; font-weight: 400; margin-left: 4px; color: #a28d65; }
+.metrics div > span { display: block; color: #a28d65; font-size: 10px; margin-top: 4px; }
+.endlessInfo, .routeEnds { display: flex; justify-content: space-between; font-size: 10px; color: #ac9465; gap: 8px; }
+.endlessInfo { padding: 8px 0 12px; color: #e6c379; }
+.routeEnds { font-size: 8px; color: #807055; }
+.chasePanel { padding: 15px 17px; background: #14120d; border: 1px solid #4b3c23; }
+.chaseHeading { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+.chaseHeading > span { color: #bda675; font-size: 11px; }
+.chaseHeading > strong { font-size: 23px; font-weight: 450; }
+.raceMeta { display: flex; justify-content: space-between; gap: 8px; color: #a28d65; font-size: 9px; margin-top: 8px; }
+.chaseTrack { display: flex; align-items: center; margin: 12px 0 8px; height: 20px; gap: 5px; }
+.chaseTrack > span, .chaseTrack > b { flex-shrink: 0; font-size: 9px; color: #ad9160; }
+.chaseTrack > i { max-width: calc(100% - 40px); height: 1px; border-top: 1px dashed #a28346; transition: width 160ms linear; }
+.chaseTrack > b { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid #cba250; border-radius: 50%; color: #f4d791; }
+.chasePanel > p { margin: 0; font-size: 10px; color: #897754; }
+.close { border-color: #b77c33; }
+.close > p { color: #edc471; }
+.caughtReaction img { flex-shrink: 0; object-fit: cover; border: 1px solid #6d5630; border-radius: 3px; }
+.caughtReaction { display: flex; align-items: center; gap: 13px; margin-bottom: 15px; }
+.caughtReaction .eyebrow { margin-bottom: 3px; }
+.caughtReaction strong { color: #f4d58e; font-size: 18px; }
+.overlayCard .caughtTitle { font-size: clamp(23px, 2.5vw, 28px); margin-bottom: 13px; }
+.controlsPanel { padding: 3px 1px 0; }
+.controlsPanel > div { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; }
+.controlsPanel kbd { min-width: 23px; padding: 3px 5px; text-align: center; font-family: inherit; font-size: 10px; color: #dac08a; border: 1px solid #4a3c25; background: #15130f; border-radius: 3px; }
+.controlsPanel div > span { font-size: 11px; color: #9e8a64; margin-left: 5px; }
+.controlsPanel > p:last-child { font-size: 10px; color: #74664d; line-height: 1.8; margin: 10px 0 0; }
+.record { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid #3f3421; }
+.record > span { font-size: 8px; color: #8e7953; }
+.record > strong { font-size: 19px; font-weight: 400; }
+.storageNote { font-size: 10px; color: #bda675; margin: 0; }
+.touchControls { display: flex; justify-content: center; gap: 9px; width: 100%; margin-top: 12px; }
+.touchControls > button { min-width: 68px; min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid #64502c; background: #18140e; color: #e5c47e; cursor: pointer; font-size: 17px; }
+.touchControls span { font-size: 10px; color: #ac9465; }
+.touchControls > button:hover:enabled { background: #332819; border-color: #b78e43; }
+.touchControls > button:disabled { opacity: .35; cursor: default; }
+.footer { display: flex; justify-content: space-between; gap: 16px; color: #786644; margin-top: 17px; font-size: 8px; letter-spacing: .08em; }
+@media (min-width: 1600px) { .layout { grid-template-columns: minmax(0, 1fr) 260px; } }
+@media (max-height: 800px) and (min-width: 901px) {
+  .page { padding-top: 15px; }
+  .header { padding-bottom: 13px; }
+  .titleRow { padding: 16px 0; }
+  .titleRow h1 { font-size: 34px; }
+  .stage { height: max(420px, calc(100svh - 242px)); }
+  .scorePanel { padding: 13px 16px; }
+  .score { font-size: 40px; padding-bottom: 12px; }
+  .metrics { padding: 11px 0; }
+  .sidebar { gap: 11px; }
+  .controlsPanel > p:last-child { margin-top: 7px; }
+  .chasePanel { padding: 12px 16px; }
+}
+@media (max-width: 900px) {
+  .page { padding-inline: 18px; }
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .stage { height: clamp(400px, 58svh, 600px); }
+  .sidebar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .scorePanel { grid-row: span 2; }
+  .controlsPanel { display: none; }
+  .record { align-self: end; }
+  .touchControls { width: 100%; margin-top: 14px; }
+  .tagline { font-size: 11px; }
+}
+@media (max-width: 560px) {
+  .page { padding: 15px 12px; }
+  .header { padding-bottom: 14px; }
+  .edition { display: none; }
+  .titleRow { padding: 19px 2px; }
+  .titleRow h1 { font-size: 30px; }
+  .titleRow .eyebrow { font-size: 8px; }
+  .tagline { display: none; }
+  .stage { min-height: 400px; height: 58svh; }
+  .stageTop { inset: 10px 10px auto; }
+  .stageReaction { top: 54px; width: calc(100% - 24px); gap: 12px; padding: 8px 12px 8px 8px; }
+  .stageReaction img { width: 72px; height: 72px; }
+  .stageReaction span { margin-bottom: 5px; font-size: 9px; }
+  .stageReaction strong { font-size: 23px; }
+  .fearReaction img { width: 80px; height: 80px; }
+  .fearReaction strong { font-size: 30px; }
+  .location { padding: 7px 10px; font-size: 11px; }
+  .overlay { padding: 16px; }
+  .overlayCard { padding: 22px; }
+  .overlayCard h2 { font-size: 29px; }
+  .overlayCard > p:not(.eyebrow) { font-size: 12px; margin-bottom: 19px; }
+  .sidebar { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .scorePanel { padding: 13px; }
+  .score { font-size: 33px; padding-bottom: 13px; }
+  .metrics { padding-block: 13px; gap: 8px; }
+  .metrics strong { font-size: 20px; }
+  .chasePanel { padding: 13px; }
+  .chaseHeading { align-items: start; flex-direction: column; }
+  .chasePanel > p { font-size: 9px; line-height: 1.5; }
+  .routeEnds { font-size: 7px; }
+  .record { flex-wrap: wrap; gap: 5px; }
+  .touchControls { gap: 8px; margin-top: 12px; }
+  .touchControls > button { flex: 1; min-height: 48px; min-width: 0; }
+  .footer { font-size: 7px; letter-spacing: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .chaseTrack > i { transition: none; } .stageReaction { animation: none; } }

@@ -21,7 +21,7 @@ export const members: Member[] = [
   {
     slug: "beta",
     name: "田先生",
-    role: "Aben",
+    role: "jerk king",
     note: "收集噪声、整理节奏、把偶然变成线索。",
     menu: [
       { label: "FREQUENCY", detail: "本周正在循环的声音" },

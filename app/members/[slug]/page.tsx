@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getMember, members } from "../../members";
 import styles from "./page.module.css";
 import CaoArcade from "../cao-arcade";
+import TianRunner from "../tian-runner";
 
 export function generateStaticParams() {
   return members.map(({ slug }) => ({ slug }));
@@ -16,6 +17,7 @@ export default async function MemberPage(props: PageProps<"/members/[slug]">) {
   }
 
   if (slug === "alpha") return <CaoArcade />;
+  if (slug === "beta") return <TianRunner />;
 
   return (
     <main className={styles.page}>
