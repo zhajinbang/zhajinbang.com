@@ -4,6 +4,9 @@ export const caughtCaption = "这下田先生可惨了！";
 export const caughtImage = "/tian-runner/memes/caught.jpg";
 export const struggleImage = "/tian-runner/memes/struggle.jpg";
 export const rescuedImage = "/tian-runner/memes/rescued.jpg";
+export const baitImage = "/tian-runner/memes/bait.jpg";
+export const baitSuccessCaption = "勾引完就跑，只留下一根腋毛！";
+export const baitCaughtCaption = "被就地正法了";
 
 export const tianReactions: Record<TianReaction, { name: string; caption: string; image: string; condition: string }> = {
   tongue: { name: "吐舌头", caption: "suck my dick", image: "/tian-runner/memes/tongue.jpg", condition: "连续跳过 3 辆轿车" },

@@ -15,6 +15,8 @@ export const SLIDE_SECONDS = 0.9;
 export const MAX_STRUGGLES = 2;
 export const STRUGGLE_SECONDS = 5;
 export const STRUGGLE_TARGETS = [20, 28] as const;
+export const BAIT_SECONDS = 10;
+export const BAIT_COOLDOWN = 20;
 
 export type TianGame = {
   status: RunStatus;
@@ -49,6 +51,13 @@ export type TianGame = {
   struggleLeft: number;
   struggleTaps: number;
   struggleTarget: number;
+  baitLeft: number;
+  baitCooldown: number;
+  baitBoost: number;
+  baitBonus: number;
+  baitOutcome: "none" | "active" | "success" | "caught";
+  baitNoticeUntil: number;
+  caughtByBait: boolean;
 };
 
 export function createTianGame(seed = 81377): TianGame {
@@ -61,6 +70,7 @@ export function createTianGame(seed = 81377): TianGame {
     reaction: "smirk", reactionUntil: 0, carJumpStreak: 0,
     recordTarget: 0, recordCelebrated: false,
     strugglesUsed: 0, rescues: 0, struggleLeft: 0, struggleTaps: 0, struggleTarget: STRUGGLE_TARGETS[0],
+    baitLeft: 0, baitCooldown: 0, baitBoost: 0, baitBonus: 0, baitOutcome: "none", baitNoticeUntil: 0, caughtByBait: false,
   };
 }
 
@@ -110,6 +120,8 @@ export function tapTianStruggle(game: TianGame) {
   game.notice = ""; game.noticeLeft = 0;
   game.reaction = "smirk"; game.reactionUntil = game.elapsed + 3;
   game.carJumpStreak = 0;
+  game.caughtByBait = false;
+  game.baitOutcome = "none"; game.baitNoticeUntil = 0;
   const speed = baseRunSpeed(game.distance);
   game.entities = game.entities.filter((item) => item.z / entityPace(item) > speed * 2);
   game.nextRow = Math.max(game.nextRow, game.distance + speed);
@@ -128,11 +140,37 @@ export function jumpHeight(game: TianGame) {
 }
 
 export function runScore(game: TianGame) {
-  return Math.floor(game.distance) * 2 + game.coins * 25 + game.dodged * 35;
+  return Math.floor(game.distance) * 2 + game.coins * 25 + game.dodged * 35 + game.baitBonus;
 }
 
 export function runSpeed(game: TianGame) {
-  return baseRunSpeed(game.distance) * (game.stumble > 0 ? 0.62 : 1);
+  return baseRunSpeed(game.distance) * (1 + game.baitBoost) * (game.stumble > 0 ? 0.62 : 1);
+}
+
+export function baitBlockReason(game: TianGame) {
+  if (game.baitLeft > 0) return "active";
+  if (game.status !== "running") return "phase";
+  if (game.hits > 0) return "hurt";
+  if (game.invincible > 0) return "protected";
+  if (game.baitCooldown > 0) return "cooldown";
+  return "";
+}
+
+export function startTianBait(game: TianGame) {
+  if (baitBlockReason(game)) return false;
+  game.baitLeft = BAIT_SECONDS;
+  game.baitOutcome = "active";
+  game.baitNoticeUntil = 0;
+  return true;
+}
+
+function finishBait(game: TianGame, success: boolean) {
+  game.baitLeft = 0;
+  game.baitCooldown = BAIT_COOLDOWN;
+  game.baitOutcome = success ? "success" : "caught";
+  game.baitNoticeUntil = game.elapsed + 3;
+  if (success) game.baitBonus += 200;
+  else game.baitBoost = 0;
 }
 
 export function baseRunSpeed(distance: number) {
@@ -215,6 +253,13 @@ export function stepTianGame(game: TianGame, seconds: number) {
     return;
   }
   game.elapsed += dt;
+  const baitWasActive = game.baitLeft > 0;
+  game.baitBoost += ((baitWasActive ? 0.12 : 0) - game.baitBoost) * (1 - Math.exp(-7 * dt));
+  if (game.baitBoost < 0.000001) game.baitBoost = 0;
+  if (!baitWasActive) {
+    game.baitCooldown = Math.max(0, game.baitCooldown - dt);
+    if (game.baitCooldown < 0.000001) game.baitCooldown = 0;
+  }
   game.jump = Math.max(0, game.jump - dt);
   game.slide = Math.max(0, game.slide - dt);
   game.invincible = Math.max(0, game.invincible - dt);
@@ -244,6 +289,7 @@ export function stepTianGame(game: TianGame, seconds: number) {
         : game.slide <= 0 && height < 0.35;
       if (sameLane && posture) {
         game.coins++;
+        if (baitWasActive) game.baitBonus += 50;
         if (game.coins % 18 === 0) react(game, "grin");
       }
       continue;
@@ -258,17 +304,25 @@ export function stepTianGame(game: TianGame, seconds: number) {
         if (game.carJumpStreak > 0 && game.carJumpStreak % 3 === 0) react(game, "tongue");
       }
     } else if (game.invincible <= 0) {
-      game.hits++;
+      game.hits = baitWasActive ? 2 : game.hits + 1;
       game.carJumpStreak = 0;
       game.gap = game.hits === 1 ? 6 : 0;
       game.stumble = 0.7;
       game.invincible = 0.9;
       game.notice = game.hits === 1 ? "第一次磕绊！再撞一次就被抓了" : "第二次磕绊，被抓住了！";
       game.noticeLeft = 2.3;
-      if (game.hits >= 2) { enterStruggle(game); break; }
+      if (game.hits >= 2) {
+        game.caughtByBait = baitWasActive;
+        if (baitWasActive) finishBait(game, false);
+        enterStruggle(game); break;
+      }
     }
   }
   game.entities = game.entities.filter((item) => item.z > -18);
+  if (baitWasActive && game.status === "running" && game.baitLeft > 0) {
+    game.baitLeft = Math.max(0, game.baitLeft - dt);
+    if (game.baitLeft <= 0.000001) finishBait(game, true);
+  }
   if (!game.recordCelebrated && game.recordTarget > 0 && runScore(game) > game.recordTarget) {
     game.recordCelebrated = true;
     react(game, "smirk");
@@ -280,12 +334,15 @@ export function tianSnapshot(game: TianGame) {
     status: game.status, distance: Math.floor(game.distance), score: runScore(game),
     coins: game.coins, gap: Math.round(game.gap), hits: game.hits, dodged: game.dodged,
     seconds: Math.floor(game.elapsed), countdown: Math.ceil(game.countdown),
-    tempo: baseRunSpeed(game.distance) / START_SPEED,
+    tempo: baseRunSpeed(game.distance) * (1 + game.baitBoost) / START_SPEED,
     reaction: visibleTianReaction(game),
     strugglesLeft: MAX_STRUGGLES - game.strugglesUsed, strugglesUsed: game.strugglesUsed,
     rescues: game.rescues, struggleLeft: game.struggleLeft,
     struggleTaps: game.struggleTaps, struggleTarget: game.struggleTarget,
     pausedFrom: game.resumeStatus,
+    baitLeft: game.baitLeft, baitCooldown: game.baitCooldown, baitBlock: baitBlockReason(game),
+    baitBonus: game.baitBonus, baitOutcome: game.baitOutcome, caughtByBait: game.caughtByBait,
+    baitSuccessNotice: game.baitOutcome === "success" && game.elapsed < game.baitNoticeUntil,
     notice: game.noticeLeft > 0 ? game.notice : "",
   };
 }

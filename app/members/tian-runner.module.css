@@ -41,6 +41,9 @@
 .fearReaction { border-color: #ffd27b; background: linear-gradient(110deg, #39230bf5, #1d150bef); box-shadow: 0 9px 28px #0006, 0 0 28px #e8ab3e55; }
 .fearReaction img { width: 104px; height: 104px; }
 .fearReaction strong { font-size: clamp(28px, 3vw, 38px); color: #ffdd8e; }
+.baitReaction { border-color: #edc56d; background: linear-gradient(110deg, #2c220ef5, #14110bf2); }
+.baitReaction strong { font-size: clamp(20px, 2.1vw, 25px); }
+.baitReaction em { display: block; margin-top: 5px; color: #cfb580; font-size: 10px; line-height: 1.3; font-style: normal; font-variant-numeric: tabular-nums; }
 @keyframes reaction-arrive { from { opacity: 0; transform: translateX(-50%) translateY(-7px) scale(.9); } 70% { opacity: 1; transform: translateX(-50%) scale(1.025); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
 .inGameHint { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); padding: 7px 14px; background: #10100dbb; color: #ffe5ac; font-size: 10px; white-space: nowrap; pointer-events: none; }
 .inGameHint > span { margin-inline: 14px; }
@@ -114,11 +117,15 @@
 .record > span { font-size: 8px; color: #8e7953; }
 .record > strong { font-size: 19px; font-weight: 400; }
 .storageNote { font-size: 10px; color: #bda675; margin: 0; }
-.touchControls { display: flex; justify-content: center; gap: 9px; width: 100%; margin-top: 12px; }
+.touchControls { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; width: 100%; margin-top: 12px; }
 .touchControls > button { min-width: 68px; min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid #64502c; background: #18140e; color: #e5c47e; cursor: pointer; font-size: 17px; }
 .touchControls span { font-size: 10px; color: #ac9465; }
 .touchControls > button:hover:enabled { background: #332819; border-color: #b78e43; }
 .touchControls > button:disabled { opacity: .35; cursor: default; }
+.touchControls > .baitButton { flex-direction: column; gap: 2px; min-width: 182px; min-height: 45px; padding: 5px 13px; background: #3a2c13; border-color: #bc954c; }
+.baitButton > strong { font-size: 12px; font-weight: 650; }
+.touchControls > .baitButton:disabled { opacity: .7; }
+.baitHint { margin: 7px 0 0; color: #9f895f; text-align: center; font-size: 9px; line-height: 1.5; }
 .footer { display: flex; justify-content: space-between; gap: 16px; color: #786644; margin-top: 17px; font-size: 8px; letter-spacing: .08em; }
 @media (min-width: 1600px) { .layout { grid-template-columns: minmax(0, 1fr) 260px; } }
 @media (max-height: 800px) and (min-width: 901px) {
@@ -161,6 +168,9 @@
   .stageReaction strong { font-size: 23px; }
   .fearReaction img { width: 80px; height: 80px; }
   .fearReaction strong { font-size: 30px; }
+  .baitReaction span { font-size: 8px; margin-bottom: 4px; }
+  .baitReaction strong { font-size: 18px; }
+  .baitReaction em { font-size: 8px; margin-top: 3px; }
   .location { padding: 7px 10px; font-size: 11px; }
   .overlay { padding: 16px; }
   .overlayCard { padding: 22px; }
@@ -201,6 +211,7 @@
   .record { flex-wrap: wrap; gap: 5px; }
   .touchControls { gap: 8px; margin-top: 12px; }
   .touchControls > button { flex: 1; min-height: 48px; min-width: 0; }
+  .touchControls > .baitButton { flex: 0 0 100%; min-height: 49px; }
   .footer { font-size: 7px; letter-spacing: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .chaseTrack > i { transition: none; } .stageReaction, .struggleArt img { animation: none; } }

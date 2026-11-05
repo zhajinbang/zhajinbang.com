@@ -3,10 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { actTianGame, createTianGame, MAX_STRUGGLES, pauseTianGame, resumeTianGame, startTianGame, stepTianGame, tapTianStruggle, tianSnapshot, type RunAction } from "./tian-game";
+import { actTianGame, createTianGame, MAX_STRUGGLES, pauseTianGame, resumeTianGame, startTianBait, startTianGame, stepTianGame, tapTianStruggle, tianSnapshot, type RunAction } from "./tian-game";
 import { drawTianGame, type RunAssets } from "./tian-renderer";
 import styles from "./tian-runner.module.css";
-import { caughtCaption, caughtImage, rescuedImage, struggleImage, tianReactions } from "./tian-reactions";
+import { baitCaughtCaption, baitImage, baitSuccessCaption, caughtCaption, caughtImage, rescuedImage, struggleImage, tianReactions } from "./tian-reactions";
 
 const RECORD_KEY = "zhajinbang-tian-runner-record-v1";
 const assetPaths = {
@@ -15,6 +15,7 @@ const assetPaths = {
   chaser: "/tian-runner/v2/player-run-back.png",
   struggle: struggleImage,
   rescued: rescuedImage,
+  bait: baitImage,
 };
 
 function readRecord() {
@@ -38,6 +39,13 @@ export default function TianRunner() {
   const isOver = stats.status === "caught";
   const danger = stats.gap <= 12;
   const reaction = tianReactions[stats.reaction];
+  const baitActive = stats.baitLeft > 0;
+  const showBaitReaction = isPlaying && (baitActive || stats.baitSuccessNotice);
+  const baitLabel = baitActive ? `正在散味：${stats.baitLeft.toFixed(1)}秒`
+    : stats.baitBlock === "hurt" ? "先擦擦汗，别再散味了"
+    : stats.baitBlock === "protected" ? "碰撞保护中，先擦擦汗"
+    : stats.baitCooldown > 0 ? `腋下风干中：${Math.ceil(stats.baitCooldown)}秒`
+    : "回头散个味儿";
   const showStageReaction = isPlaying && (
     stats.seconds < 3 || danger || game.current.elapsed < game.current.reactionUntil
   );
@@ -58,6 +66,10 @@ export default function TianRunner() {
   }, [publish]);
   const action = useCallback((value: RunAction) => actTianGame(game.current, value), []);
   const struggleTap = useCallback(() => { tapTianStruggle(game.current); publish(); }, [publish]);
+  const triggerBait = useCallback(() => {
+    if (startTianBait(game.current)) canvas.current?.focus({ preventScroll: true });
+    publish();
+  }, [publish]);
 
   useEffect(() => {
     if (stats.status === "struggle") struggleButton.current?.focus({ preventScroll: true });
@@ -141,6 +153,9 @@ export default function TianRunner() {
       if (event.code === "Escape" || event.code === "KeyP") {
         event.preventDefault(); if (!event.repeat) togglePause(); return;
       }
+      if (event.code === "KeyE") {
+        event.preventDefault(); if (!event.repeat) triggerBait(); return;
+      }
       const keys: Record<string, RunAction> = {
         ArrowLeft: "left", KeyA: "left", ArrowRight: "right", KeyD: "right",
         ArrowUp: "jump", KeyW: "jump", Space: "jump", ArrowDown: "slide", KeyS: "slide",
@@ -158,7 +173,7 @@ export default function TianRunner() {
       window.removeEventListener("blur", suspend);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [action, publish, togglePause, struggleTap]);
+  }, [action, publish, togglePause, struggleTap, triggerBait]);
 
   return (
     <main className={styles.page} lang="zh-CN">
@@ -201,7 +216,15 @@ export default function TianRunner() {
               </button>}
           </div>}
 
-          {showStageReaction && <div
+          {showBaitReaction && <div className={`${styles.stageReaction} ${styles.baitReaction}`} data-bait-reaction={baitActive ? "active" : "success"} role="status" aria-live="polite">
+            <Image src={baitImage} alt="田先生勾引时的表情" width={112} height={112} priority unoptimized />
+            <div><span>{baitActive ? "主动勾引 · 金币得分×3 · 速度+12%" : "勾引成功 · 额外 +200 分"}</span>
+              <strong>{baitActive ? "田先生解除了腋下的封印！" : baitSuccessCaption}</strong>
+              {baitActive && <em>还剩 {stats.baitLeft.toFixed(1)} 秒</em>}
+            </div>
+          </div>}
+
+          {showStageReaction && !showBaitReaction && <div
             key={`${stats.reaction}-${game.current.reactionUntil}`}
             className={`${styles.stageReaction} ${danger ? styles.fearReaction : ""}`}
             data-stage-reaction={stats.reaction}
@@ -241,7 +264,7 @@ export default function TianRunner() {
             </div>
             <div className={styles.struggleHeading}>
               <p className={styles.eyebrow}>BREAK FREE</p>
-              <h2>田先生快被腌入味了！</h2>
+              <h2>{stats.caughtByBait ? baitCaughtCaption : "田先生快被腌入味了！"}</h2>
               <p>别光看，快点！腋毛都要起静电了！</p>
             </div>
             <div className={styles.struggleMeters}>
@@ -271,7 +294,7 @@ export default function TianRunner() {
               <div><p className={styles.eyebrow}>CAUGHT YOU</p><strong>{tianReactions.fear.caption}</strong></div>
             </div>
             <div className={styles.caughtInfo}>
-            <h2 className={styles.caughtTitle}>{caughtCaption}</h2>
+            <h2 className={styles.caughtTitle}>{stats.caughtByBait ? baitCaughtCaption : caughtCaption}</h2>
             <p>{`这次跑了 ${stats.distance.toLocaleString()} 米，下次再远一点。`}</p>
             <div className={styles.result}><strong>{stats.score.toLocaleString()}<small>本次得分</small></strong><span>{stats.coins} 枚金币<br />{stats.dodged} 次躲避</span></div>
             <button className={styles.primary} onClick={begin}>再给田先生一次机会 ↗</button>
@@ -286,7 +309,10 @@ export default function TianRunner() {
           <button disabled={!isPlaying} onClick={() => action("jump")} aria-label="跳跃">↑<span>跳跃</span></button>
           <button disabled={!isPlaying} onClick={() => action("slide")} aria-label="下滑">↓<span>下滑</span></button>
           <button disabled={!isPlaying} onClick={() => action("right")} aria-label="向右换道">→<span>右移</span></button>
+          <button className={styles.baitButton} disabled={!!stats.baitBlock} onClick={triggerBait} aria-label="勾引" aria-keyshortcuts="E"
+            title="持续10秒，金币得分×3、速度+12%；磕绊一次直接被抓，结束后冷却20秒。"><span>勾引 · E</span><strong>{baitLabel}</strong></button>
         </nav>
+        <p className={styles.baitHint}>{baitActive ? "腋毛一抖，整条街都上头。磕绊一次直接被抓！" : "10秒金币得分×3，速度+12%；磕绊一次直接被抓，结束后冷却20秒。"}{stats.strugglesLeft === 0 && "再散一次味儿，可没人捞你了。"}</p>
         </div>
 
         <aside className={styles.sidebar} aria-label="追逐记录与操作说明">
@@ -303,7 +329,7 @@ export default function TianRunner() {
             <div className={styles.raceMeta}><span>磕绊 {stats.hits} / 2</span><span>速度 {stats.tempo.toFixed(2)}×</span></div>
             <div className={styles.escapeBudget}><span>挣脱机会</span><strong>{stats.strugglesLeft} / {MAX_STRUGGLES}</strong></div>
             <div className={styles.chaseTrack} aria-hidden="true"><span>壮汉</span><i style={{ width: `${Math.max(8, stats.gap / 60 * 100)}%` }} /><b>田</b></div>
-            <p>{isOver ? "这下田先生可惨了！" : stats.status === "struggle" ? "快点，帮田先生挣脱！" : stats.status === "rescued" ? "挣脱成功，准备继续跑路。" : danger ? "就在身后！再撞一次就被抓。" : "保持距离，让他追去吧。"}</p>
+            <p>{stats.caughtByBait ? baitCaughtCaption : isOver ? "这下田先生可惨了！" : stats.status === "struggle" ? "快点，帮田先生挣脱！" : stats.status === "rescued" ? "挣脱成功，准备继续跑路。" : danger ? "就在身后！再撞一次就被抓。" : "保持距离，让他追去吧。"}</p>
           </div>
 
           <div className={styles.controlsPanel}>

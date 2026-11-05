@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { actTianGame, baseRunSpeed, createTianGame, entityPace, JUMP_SECONDS, pauseTianGame, resumeTianGame, rowInterval, runScore, runSpeed, startTianGame, stepTianGame, tapTianStruggle, visibleTianReaction } from "../app/members/tian-game.ts";
+import { actTianGame, baitBlockReason, baseRunSpeed, createTianGame, entityPace, JUMP_SECONDS, pauseTianGame, resumeTianGame, rowInterval, runScore, runSpeed, startTianBait, startTianGame, stepTianGame, tapTianStruggle, visibleTianReaction } from "../app/members/tian-game.ts";
 
 function isolatedGame(kind, options = {}) {
   const game = createTianGame(42);
@@ -403,4 +403,102 @@ test("pause freezes both struggle and success timers and rejects taps", () => {
   assert.equal(game.countdown, 3);
   resumeTianGame(game);
   assert.equal(game.status, "rescued");
+});
+
+test("bait is available only while running safely without protection or cooldown", () => {
+  for (const options of [{ status: "ready" }, { status: "countdown" }, { status: "paused" }, { status: "struggle" }, { status: "rescued" }, { hits: 1 }, { invincible: 1 }, { baitCooldown: 1 }]) {
+    const game = isolatedGame(null, options);
+    assert.equal(startTianBait(game), false);
+    assert.equal(game.baitLeft, 0);
+  }
+  const game = isolatedGame();
+  assert.equal(startTianBait(game), true);
+  assert.equal(game.baitLeft, 10);
+  assert.equal(baitBlockReason(game), "active");
+  assert.equal(startTianBait(game), false, "repeat activation cannot extend the effect");
+});
+
+test("bait triples only newly collected coin scores, preserving coin counts and reactions", () => {
+  const game = isolatedGame(null, { coins: 17 });
+  const scoreBefore = runScore(game);
+  startTianBait(game);
+  assert.equal(runScore(game), scoreBefore, "existing coins must not receive retroactive multipliers");
+  game.entities = [{ id: 200, lane: 1, kind: "coin", z: 0.1, resolved: false }];
+  stepTianGame(game, 0.01);
+  assert.equal(game.coins, 18);
+  assert.equal(game.baitBonus, 50);
+  assert.equal(visibleTianReaction(game), "grin");
+  assert.equal(runScore(game), Math.floor(game.distance) * 2 + 18 * 25 + 50);
+});
+
+test("surviving ten seconds awards 200 once, then starts a full twenty-second cooldown", () => {
+  const game = isolatedGame(); startTianBait(game);
+  for (let frame = 0; frame < 199; frame++) stepTianGame(game, 0.05);
+  assert.equal(game.baitOutcome, "active");
+  assert.equal(game.baitBonus, 0);
+  stepTianGame(game, 0.05);
+  assert.equal(game.baitOutcome, "success");
+  assert.equal(game.baitLeft, 0);
+  assert.equal(game.baitCooldown, 20);
+  assert.equal(game.baitBonus, 200);
+  for (let frame = 0; frame < 399; frame++) stepTianGame(game, 0.05);
+  assert.equal(startTianBait(game), false);
+  assert.equal(game.baitBonus, 200);
+  stepTianGame(game, 0.05);
+  assert.equal(game.baitCooldown, 0);
+  assert.equal(startTianBait(game), true);
+});
+
+test("a single bait collision captures immediately and keeps earned bonuses through rescue", () => {
+  const game = isolatedGame(null, { coins: 5, baitBonus: 100 }); startTianBait(game);
+  game.entities = [{ id: 201, lane: 1, kind: "cart", z: 0.1, resolved: false }];
+  stepTianGame(game, 0.01);
+  assert.equal(game.status, "struggle");
+  assert.equal(game.caughtByBait, true);
+  assert.equal(game.strugglesUsed, 1);
+  assert.equal(game.baitOutcome, "caught");
+  assert.equal(game.baitCooldown, 20);
+  assert.equal(game.baitBonus, 100, "failure does not award survival points or revoke prior earnings");
+  stepTianGame(game, 0.05);
+  assert.equal(game.baitCooldown, 20, "struggle time cannot shorten cooldown");
+  for (let tap = 0; tap < 20; tap++) tapTianStruggle(game);
+  assert.equal(game.status, "rescued");
+  assert.equal(game.baitCooldown, 20);
+  assert.equal(game.baitBonus, 100);
+  assert.equal(game.caughtByBait, false);
+  assert.equal(game.baitLeft, 0);
+  for (let frame = 0; frame < 60; frame++) stepTianGame(game, 0.05);
+  assert.equal(baitBlockReason(game), "protected");
+  assert.equal(startTianBait(game), false);
+});
+
+test("bait capture with no rescue opportunity ends the run", () => {
+  const game = isolatedGame(null, { strugglesUsed: 2 }); startTianBait(game);
+  game.entities = [{ id: 202, lane: 1, kind: "cart", z: 0.1, resolved: false }];
+  stepTianGame(game, 0.01);
+  assert.equal(game.status, "caught");
+  assert.equal(game.caughtByBait, true);
+  assert.equal(game.strugglesUsed, 2);
+});
+
+test("bait speed changes smoothly, stays bounded, and timers freeze while paused", () => {
+  const game = isolatedGame(); const normalSpeed = runSpeed(game);
+  startTianBait(game);
+  assert.equal(runSpeed(game), normalSpeed);
+  stepTianGame(game, 0.01);
+  assert.ok(game.baitBoost > 0 && game.baitBoost < 0.03);
+  for (let frame = 0; frame < 40; frame++) stepTianGame(game, 0.05);
+  assert.ok(game.baitBoost > 0.119 && game.baitBoost <= 0.12);
+  pauseTianGame(game);
+  const before = structuredClone(game); stepTianGame(game, 99);
+  assert.deepEqual(game, before);
+  resumeTianGame(game);
+  for (let frame = 0; frame < 160; frame++) stepTianGame(game, 0.05);
+  assert.equal(game.baitOutcome, "success");
+  const boostAtEnd = game.baitBoost;
+  stepTianGame(game, 0.05);
+  assert.ok(game.baitBoost < boostAtEnd);
+  pauseTianGame(game);
+  const cooldown = game.baitCooldown; stepTianGame(game, 99);
+  assert.equal(game.baitCooldown, cooldown);
 });
